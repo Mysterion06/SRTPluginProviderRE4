@@ -3,6 +3,7 @@
     public enum GameVersion : int
     {
         Unknown,
-        RE4WW_20210702_1
+        RE4_1_1_0,
+        RE4_1_0_6
     }
 }

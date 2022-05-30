@@ -37,7 +37,7 @@ namespace SRTPluginProviderRE4
             if (process == null)
                 return; // Do not continue if this is null.
 
-            SelectPointerAddresses();
+            SelectPointerAddresses(GameHashes.DetectVersion(process.MainModule.FileName));
 
             int pid = GetProcessId(process).Value;
             memoryAccess = new ProcessMemoryHandler(pid);
@@ -47,13 +47,27 @@ namespace SRTPluginProviderRE4
             }
         }
 
-        private void SelectPointerAddresses()
+        private void SelectPointerAddresses(GameVersion gv)
         {
-            pointerAddressGameData = 0x85F6F4;
-            pointerAddressKills = 0x862BC4;
-            pointerAddressLastItemID = 0x858EE4;
-            pointerAddressHP = 0x85F714;
-            pointerAddressHP2 = 0x85F718;
+            if (gv == GameVersion.RE4_1_1_0)
+            {
+                pointerAddressGameData = 0x85F6F4;
+                pointerAddressKills = 0x862BC4;
+                pointerAddressLastItemID = 0x858EE4;
+                pointerAddressHP = 0x85F714;
+                pointerAddressHP2 = 0x85F718;
+            } else if(gv == GameVersion.RE4_1_0_6)
+            {
+                pointerAddressGameData = 0x85BE74;
+                pointerAddressKills = 0x85F344;
+                pointerAddressLastItemID = 0x855664;
+                pointerAddressHP = 0x85BE94;
+                pointerAddressHP2 = 0x85BE98;
+            }
+            else
+            {
+                gameMemoryValues._gameInfo = "Unknown Release";
+            }
         }
 
         internal unsafe IGameMemoryRE4 Refresh()

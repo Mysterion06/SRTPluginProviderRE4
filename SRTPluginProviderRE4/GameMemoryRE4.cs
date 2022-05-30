@@ -17,6 +17,10 @@ namespace SRTPluginProviderRE4
         // Versioninfo
         public string VersionInfo => FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
 
+        // GameInfo
+        public string GameInfo { get => _gameInfo; set => _gameInfo = value; }
+        internal string _gameInfo;
+
         // Game Data
         public GameSaveData GameData { get => _gameData; set => _gameData = value; }
         internal GameSaveData _gameData;

@@ -9,6 +9,7 @@ namespace SRTPluginProviderRE4
         // Versioninfo
         string GameName { get; }
         string VersionInfo { get; }
+        string GameInfo { get; set; }
         GameSaveData GameData { get; set; }
         PlayerKills GamePlayerKills { get; set; }
         InventoryIDs GamePlayerItemID { get; set; }
