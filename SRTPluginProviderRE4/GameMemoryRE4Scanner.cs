@@ -2,11 +2,13 @@
 using SRTPluginProviderRE4.Structs.GameStructs;
 using System;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace SRTPluginProviderRE4
 {
     internal unsafe class GameMemoryRE4Scanner : IDisposable
     {
+        private static readonly int MAX_ENEMIES = 32;
 
         // Variables
         private ProcessMemoryHandler memoryAccess;
@@ -15,15 +17,18 @@ namespace SRTPluginProviderRE4
         public bool ProcessRunning => memoryAccess != null && memoryAccess.ProcessRunning;
         public int ProcessExitCode => (memoryAccess != null) ? memoryAccess.ProcessExitCode : 0;
 
+
         // Pointer Address Variables
         private int pointerAddressGameData;
         private int pointerAddressKills;
         private int pointerAddressLastItemID;
         private int pointerAddressHP;
         private int pointerAddressHP2;
+        private int pointerAddressEnemyHP;
 
         // Pointer Classes
         private IntPtr BaseAddress { get; set; }
+        private MultilevelPointer[] PointerEnemyHP { get; set; }
 
         internal GameMemoryRE4Scanner(Process process = null)
         {
@@ -31,6 +36,8 @@ namespace SRTPluginProviderRE4
             if (process != null)
                 Initialize(process);
         }
+
+
 
         internal unsafe void Initialize(Process process)
         {
@@ -44,6 +51,29 @@ namespace SRTPluginProviderRE4
             if (ProcessRunning)
             {
                 BaseAddress = NativeWrappers.GetProcessBaseAddress(pid, PInvoke.ListModules.LIST_MODULES_32BIT); // Bypass .NET's managed solution for getting this and attempt to get this info ourselves via PInvoke since some users are getting 299 PARTIAL COPY when they seemingly shouldn't.
+
+                gameMemoryValues._enemyHealth = new EnemyHP[MAX_ENEMIES];
+                for (int i = 0; i < MAX_ENEMIES; ++i)
+                    gameMemoryValues._enemyHealth[i] = new EnemyHP();
+
+                GenerateEnemyEntries();
+            }
+        }
+        private unsafe void GenerateEnemyEntries()
+        {
+            if (PointerEnemyHP == null)
+            {
+                PointerEnemyHP = new MultilevelPointer[MAX_ENEMIES];
+
+                for (int i = 0; i < MAX_ENEMIES; i++)
+                {
+                    int[] offsets = new int[i];
+
+                    for (int j = 0; j < offsets.Length; j++)
+                        offsets[j] = 0x8;
+
+                    PointerEnemyHP[i] = new MultilevelPointer(memoryAccess,IntPtr.Add(BaseAddress, pointerAddressEnemyHP),offsets);
+                }
             }
         }
 
@@ -56,6 +86,7 @@ namespace SRTPluginProviderRE4
                 pointerAddressLastItemID = 0x858EE4;
                 pointerAddressHP = 0x85F714;
                 pointerAddressHP2 = 0x85F718;
+                pointerAddressEnemyHP = 0x867594;
             } else if(gv == GameVersion.RE4_1_0_6)
             {
                 pointerAddressGameData = 0x85BE74;
@@ -63,6 +94,23 @@ namespace SRTPluginProviderRE4
                 pointerAddressLastItemID = 0x855664;
                 pointerAddressHP = 0x85BE94;
                 pointerAddressHP2 = 0x85BE98;
+                pointerAddressEnemyHP = 0x867594;
+            } else if(gv == GameVersion.RE4_JP)
+            {
+                pointerAddressGameData = 0x85BE74;
+                pointerAddressKills = 0x85F344;
+                pointerAddressLastItemID = 0x855664;
+                pointerAddressHP = 0x85BE94;
+                pointerAddressHP2 = 0x85BE98;
+                pointerAddressEnemyHP = 0x867594;
+            } else if(gv == GameVersion.RE4_GER)
+            {
+                pointerAddressGameData = 0x85BE74;
+                pointerAddressKills = 0x85F344;
+                pointerAddressLastItemID = 0x855664;
+                pointerAddressHP = 0x85BE94;
+                pointerAddressHP2 = 0x85BE98;
+                pointerAddressEnemyHP = 0x867594;
             }
             else
             {
@@ -70,8 +118,15 @@ namespace SRTPluginProviderRE4
             }
         }
 
+        internal void UpdatePointers()
+        {
+            for (int i = 0; i < PointerEnemyHP.Length; ++i)
+                PointerEnemyHP[i].UpdatePointers();
+        }
+
         internal unsafe IGameMemoryRE4 Refresh()
         {
+            UpdatePointers();
             // Game Data
             gameMemoryValues._gameData = memoryAccess.GetAt<GameSaveData>(IntPtr.Add(BaseAddress, pointerAddressGameData));
             gameMemoryValues._playerKills = memoryAccess.GetAt<PlayerKills>(IntPtr.Add(BaseAddress, pointerAddressKills));
@@ -83,8 +138,28 @@ namespace SRTPluginProviderRE4
             gameMemoryValues._player2 = memoryAccess.GetAt<GamePlayer>(IntPtr.Add(BaseAddress, pointerAddressHP2));
             gameMemoryValues._playerName2 = "Ashley: ";
 
+            GetEnemies();
+
             HasScanned = true;
             return gameMemoryValues;
+        }
+
+        private void GetEnemies()
+        {
+            for (int i = 0; i < gameMemoryValues.EnemyHealth.Length; ++i)
+            {
+                if (PointerEnemyHP[i].Address != IntPtr.Zero)
+                {
+                    GamePlayer enemyHP = PointerEnemyHP[i].Deref<GamePlayer>(0x324);
+                    gameMemoryValues.EnemyHealth[i]._maximumHP = enemyHP.MaxHP;
+                    gameMemoryValues.EnemyHealth[i]._currentHP = enemyHP.CurrentHP;
+                }
+                else
+                {
+                    gameMemoryValues.EnemyHealth[i]._maximumHP = 0;
+                    gameMemoryValues.EnemyHealth[i]._currentHP = 0;
+                }
+            }
         }
 
         private int? GetProcessId(Process process) => process?.Id;

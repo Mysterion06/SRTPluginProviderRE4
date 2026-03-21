@@ -9,7 +9,7 @@ namespace SRTPluginProviderRE4
 
         public string Description => "A game memory provider plugin for Resident Evil 4 (2005).";
 
-        public string Author => "VideoGameRoulette";
+        public string Author => "Mysterion352";
 
         public Uri MoreInfoURL => new Uri("https://github.com/SpeedrunTooling/SRTPluginProviderRE4");
 

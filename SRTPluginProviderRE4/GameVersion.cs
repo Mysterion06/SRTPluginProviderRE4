@@ -4,6 +4,8 @@
     {
         Unknown,
         RE4_1_1_0,
-        RE4_1_0_6
+        RE4_1_0_6,
+        RE4_JP,
+        RE4_GER
     }
 }

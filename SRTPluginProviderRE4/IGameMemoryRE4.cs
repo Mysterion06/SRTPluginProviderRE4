@@ -17,6 +17,7 @@ namespace SRTPluginProviderRE4
         GamePlayer Player2 { get; set; }
         string PlayerName { get; set; }
         string PlayerName2 { get; set; }
+        EnemyHP[] EnemyHealth { get; set; }
         TimeSpan IGTTimeSpan { get; }
         string IGTFormattedString { get; }
     }

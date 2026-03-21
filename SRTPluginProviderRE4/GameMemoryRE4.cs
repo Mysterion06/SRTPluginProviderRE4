@@ -43,6 +43,9 @@ namespace SRTPluginProviderRE4
         public string PlayerName2 { get => _playerName2; set => _playerName2 = value; }
         internal string _playerName2;
         
+        public EnemyHP[] EnemyHealth { get => _enemyHealth; set => _enemyHealth = value; }
+        internal EnemyHP[] _enemyHealth;
+
         public TimeSpan IGTTimeSpan
         {
             get
